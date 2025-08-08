@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import HomePage from './components/HomePage';
+import GameSelection from './components/GameSelection';
 import GamePage from './components/GamePage';
 import LeaderboardPage from './components/LeaderboardPage';
 import AboutPage from './components/AboutPage';
@@ -12,7 +13,8 @@ function App() {
       <Navigation />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/game" element={<GamePage />} />
+        <Route path="/game" element={<GameSelection />} />
+        <Route path="/play/:gameId" element={<GamePage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/about" element={<AboutPage />} />
       </Routes>
