@@ -5,13 +5,12 @@
 
 
 ## Basic Details
-### Team Name: [Name]
+### Team Name: [DeTox]
 
 
 ### Team Members
-- Team Lead: [Name] - [College]
-- Member 2: [Name] - [College]
-- Member 3: [Name] - [College]
+- Team Lead: Anaya - SCMS College of Engineering and Technology
+- Member 2: Anandhu - SCMS College of Engineering and Technology
 
 ### Project Description
 [2-3 lines about what your project does]
