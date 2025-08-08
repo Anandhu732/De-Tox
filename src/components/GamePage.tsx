@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Target, Zap, AlertTriangle, Gift, Sparkles, Home, MousePointer, Clock, Gamepad2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { AlertTriangle, Sparkles, Home, RefreshCw, Trophy, Target, MousePointer, Shield } from 'lucide-react';
+import { Link, useParams, useLocation } from 'react-router-dom';
+import HoverGame from '../games/HoverGame';
+import ClickGame from '../games/ClickGame';
+import AvoidGame from '../games/AvoidGame';
 
 interface PopupMessage {
   id: string;
@@ -10,525 +13,326 @@ interface PopupMessage {
   type: 'alert' | 'news' | 'prize' | 'warning';
 }
 
-type GameType = 'hover' | 'click' | 'avoid' | 'memory';
+const popupMessages = [
+  { text: "🍕 FREE PIZZA DELIVERY!", type: 'prize' as const },
+  { text: "⚠️ BREAKING NEWS: Your chair is haunted!", type: 'news' as const },
+  { text: "🎉 CONGRATULATIONS! You've won absolutely nothing!", type: 'prize' as const },
+  { text: "🚨 URGENT: Your cat is judging you right now", type: 'alert' as const },
+  { text: "💰 CLICK HERE FOR $1,000,000!", type: 'prize' as const },
+  { text: "⚡ WARNING: Fun levels critically low!", type: 'warning' as const },
+  { text: "🎮 Your high score: Still zero!", type: 'alert' as const },
+  { text: "🌟 You're doing great! (We're lying)", type: 'news' as const },
+  { text: "🦄 UNICORN ALERT: None detected nearby", type: 'warning' as const },
+  { text: "🍪 COOKIE EMERGENCY: Jar is empty!", type: 'alert' as const }
+];
+
+const emojis = ['🎮', '🎯', '🤪', '😵‍💫', '🎉', '💫', '⭐', '🌟', '🎈', '🦄', '🌈'];
 
 const GamePage = () => {
-  const [currentGame, setCurrentGame] = useState<GameType>('hover');
-  const [isHovering, setIsHovering] = useState(false);
-  const [timeHovered, setTimeHovered] = useState(0);
-  const [targetPosition, setTargetPosition] = useState({ x: 50, y: 50 });
-  const [popups, setPopups] = useState<PopupMessage[]>([]);
+  const { gameId } = useParams<{ gameId: string }>();
+  const location = useLocation();
+  const playerName = location.state?.playerName || 'Anonymous Player';
+
   const [backgroundMode, setBackgroundMode] = useState(0);
-  const [sarcasticMessage, setSarcasticMessage] = useState("Choose your poison! Each game is designed to break your spirit! 😈");
+  const [sarcasticMessage, setSarcasticMessage] = useState("Get ready to fail spectacularly! 😈");
   const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing');
-  const [shakeIntensity, setShakeIntensity] = useState(0);
-  const [emojiStorm, setEmojiStorm] = useState(false);
-  
-  // Click Game States
-  const [clickCount, setClickCount] = useState(0);
-  const [clickTarget, setClickTarget] = useState(10);
-  const [clickTimeLeft, setClickTimeLeft] = useState(15);
-  
-  // Avoid Game States
-  const [avoidScore, setAvoidScore] = useState(0);
-  const [obstacles, setObstacles] = useState<Array<{id: string, x: number, y: number}>>([]);
-  
-  // Memory Game States
-  const [memorySequence, setMemorySequence] = useState<number[]>([]);
-  const [playerSequence, setPlayerSequence] = useState<number[]>([]);
-  const [showingSequence, setShowingSequence] = useState(false);
-  const [memoryLevel, setMemoryLevel] = useState(1);
-  
-  const gameAreaRef = useRef<HTMLDivElement>(null);
-  const targetRef = useRef<HTMLDivElement>(null);
-  const moveIntervalRef = useRef<NodeJS.Timeout>();
-  const popupIntervalRef = useRef<NodeJS.Timeout>();
-  const backgroundIntervalRef = useRef<NodeJS.Timeout>();
-  const sarcasticIntervalRef = useRef<NodeJS.Timeout>();
+  const [finalScore, setFinalScore] = useState(0);
+  const [popups, setPopups] = useState<PopupMessage[]>([]);
+  const [floatingEmojis, setFloatingEmojis] = useState<string[]>([]);
 
-  const games = [
-    { 
-      id: 'hover' as GameType, 
-      name: 'Hover Hell', 
-      icon: Target, 
+  const backgroundClasses = [
+    'bg-gradient-to-br from-purple-600 via-pink-600 to-red-600',
+    'bg-gradient-to-tr from-blue-600 via-purple-600 to-pink-600',
+    'bg-gradient-to-bl from-green-600 via-blue-600 to-purple-600',
+    'bg-gradient-to-tl from-yellow-600 via-orange-600 to-red-600'
+  ];
+
+  const gameInfo = {
+    hover: {
+      name: 'Hover Hell',
+      icon: Target,
       description: 'Keep your mouse on the box for 10 seconds',
-      color: 'bg-red-500'
+      emojis: ['🎯', '😵‍💫', '🤪']
     },
-    { 
-      id: 'click' as GameType, 
-      name: 'Click Chaos', 
-      icon: MousePointer, 
+    click: {
+      name: 'Click Chaos',
+      icon: MousePointer,
       description: 'Click the moving target 10 times in 15 seconds',
-      color: 'bg-blue-500'
+      emojis: ['👆', '💥', '⚡']
     },
-    { 
-      id: 'avoid' as GameType, 
-      name: 'Dodge Disaster', 
-      icon: Zap, 
+    avoid: {
+      name: 'Dodge Disaster',
+      icon: Shield,
       description: 'Avoid the red obstacles for as long as possible',
-      color: 'bg-green-500'
-    },
-    { 
-      id: 'memory' as GameType, 
-      name: 'Memory Mayhem', 
-      icon: Clock, 
-      description: 'Remember the sequence (if you can focus)',
-      color: 'bg-purple-500'
+      emojis: ['🛡️', '💀', '🏃‍♂️']
     }
-  ];
+  };
 
-  const sarcasticMessages = [
-    "Oh wow, you're actually trying! 🙄",
-    "Don't get too excited now... 😴",
-    "I'm sure you'll give up soon 😈",
-    "Your skills are... questionable 🤔",
-    "Is that the best you can do? 😏",
-    "Focus? What's that? 🤪",
-    "Maybe try using both hands? 😂",
-    "I believe in you! (Just kidding) 😜",
-    "You've got this! (You don't) 🤭",
-    "Stay calm and... LOOK BEHIND YOU! 👻"
-  ];
+  const currentGameInfo = gameInfo[gameId as keyof typeof gameInfo];
 
-  const popupMessages = [
-    { text: "🍕 FREE PIZZA DELIVERY!", type: 'prize' as const },
-    { text: "⚠️ BREAKING NEWS: Your chair is haunted!", type: 'news' as const },
-    { text: "🎉 CONGRATULATIONS! You've won absolutely nothing!", type: 'prize' as const },
-    { text: "🚨 URGENT: Your cat is judging you right now", type: 'alert' as const },
-    { text: "💰 CLICK HERE FOR $1,000,000!", type: 'prize' as const },
-    { text: "⚡ WARNING: Fun levels critically low!", type: 'warning' as const },
-    { text: "🎮 Your high score: Still zero!", type: 'alert' as const },
-    { text: "🌟 You're doing great! (We're lying)", type: 'news' as const },
-    { text: "🦄 UNICORN ALERT: None detected nearby", type: 'warning' as const },
-    { text: "🍪 COOKIE EMERGENCY: Jar is empty!", type: 'alert' as const }
-  ];
+  // Background animation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBackgroundMode(prev => (prev + 1) % 4);
 
-  const getRandomPosition = useCallback(() => {
-    if (!gameAreaRef.current) return { x: 50, y: 50 };
-    
-    const rect = gameAreaRef.current.getBoundingClientRect();
-    const boxSize = 60;
-    const maxX = ((rect.width - boxSize) / rect.width) * 100;
-    const maxY = ((rect.height - boxSize) / rect.height) * 100;
-    
-    return {
-      x: Math.random() * maxX,
-      y: Math.random() * maxY
-    };
+      // Add random floating emojis
+      if (Math.random() < 0.3) {
+        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+        setFloatingEmojis(prev => [...prev, randomEmoji]);
+
+        // Remove emoji after animation
+        setTimeout(() => {
+          setFloatingEmojis(prev => prev.slice(1));
+        }, 3000);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const moveTarget = useCallback(() => {
-    const moveType = Math.random();
-    
-    if (moveType < 0.3) {
-      setTargetPosition(getRandomPosition());
-      setShakeIntensity(3);
-    } else if (moveType < 0.6) {
-      setTargetPosition(prev => {
-        const newPos = getRandomPosition();
-        return {
-          x: Math.min(90, Math.max(10, prev.x + (Math.random() - 0.5) * 30)),
-          y: Math.min(90, Math.max(10, prev.y + (Math.random() - 0.5) * 30))
-        };
-      });
-      setShakeIntensity(2);
+  // Chaos popups effect
+  useEffect(() => {
+    if (gameState === 'playing') {
+      const interval = setInterval(() => {
+        if (Math.random() < 0.15) {
+          const message = popupMessages[Math.floor(Math.random() * popupMessages.length)];
+          const popup: PopupMessage = {
+            id: Math.random().toString(),
+            message: message.text,
+            type: message.type,
+            x: Math.random() * 70 + 15,
+            y: Math.random() * 70 + 15
+          };
+
+          setPopups(prev => [...prev, popup]);
+
+          setTimeout(() => {
+            setPopups(prev => prev.filter(p => p.id !== popup.id));
+          }, Math.random() * 2000 + 3000);
+        }
+      }, 2000);
+
+      return () => clearInterval(interval);
+    }
+  }, [gameState]);
+
+  const handleGameEnd = (result: 'won' | 'lost', score: number) => {
+    setGameState(result);
+    setFinalScore(score);
+
+    if (result === 'won') {
+      setSarcasticMessage(`🤯 IMPOSSIBLE! ${playerName} actually won! This must be a glitch in the matrix!`);
     } else {
-      setTargetPosition(prev => ({
-        x: Math.min(90, Math.max(10, prev.x + (Math.random() - 0.5) * 15)),
-        y: Math.min(90, Math.max(10, prev.y + (Math.random() - 0.5) * 15))
-      }));
-      setShakeIntensity(1);
+      setSarcasticMessage(`😂 As expected, ${playerName} failed spectacularly! Better luck never!`);
     }
-    
-    setTimeout(() => setShakeIntensity(0), 200);
-  }, [getRandomPosition]);
+  };
 
-  const createPopup = useCallback(() => {
-    const message = popupMessages[Math.floor(Math.random() * popupMessages.length)];
-    const popup: PopupMessage = {
-      id: Math.random().toString(),
-      message: message.text,
-      type: message.type,
-      x: Math.random() * 80 + 10,
-      y: Math.random() * 80 + 10
-    };
-    
-    setPopups(prev => [...prev, popup]);
-    
-    setTimeout(() => {
-      setPopups(prev => prev.filter(p => p.id !== popup.id));
-    }, Math.random() * 3000 + 3000);
-  }, []);
-
-  const changeSarcasticMessage = useCallback(() => {
-    setSarcasticMessage(sarcasticMessages[Math.floor(Math.random() * sarcasticMessages.length)]);
-  }, []);
+  const handleSarcasticMessage = (message: string) => {
+    setSarcasticMessage(message);
+  };
 
   const resetGame = () => {
     setGameState('playing');
-    setTimeHovered(0);
-    setIsHovering(false);
-    setTargetPosition({ x: 50, y: 50 });
+    setFinalScore(0);
     setPopups([]);
-    setClickCount(0);
-    setClickTimeLeft(15);
-    setAvoidScore(0);
-    setObstacles([]);
-    setMemorySequence([]);
-    setPlayerSequence([]);
-    setMemoryLevel(1);
-    setSarcasticMessage("Back for more punishment? I respect that! 😤");
+    setSarcasticMessage("Back for more punishment? I admire your persistence! 😤");
   };
 
-  const switchGame = (gameType: GameType) => {
-    setCurrentGame(gameType);
-    resetGame();
-    const gameNames = {
-      hover: "Hover Hell",
-      click: "Click Chaos", 
-      avoid: "Dodge Disaster",
-      memory: "Memory Mayhem"
-    };
-    setSarcasticMessage(`Welcome to ${gameNames[gameType]}! Prepare for disappointment! 😈`);
-  };
-
-  // Hover Game Timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (currentGame === 'hover' && isHovering && gameState === 'playing') {
-      interval = setInterval(() => {
-        setTimeHovered(prev => {
-          const newTime = prev + 0.1;
-          
-          if (Math.random() < 0.05) {
-            setSarcasticMessage("Oops! Timer got confused and reset itself! 🤷‍♂️");
-            return 0;
-          }
-          
-          if (newTime >= 10) {
-            setGameState('won');
-            setSarcasticMessage("Wait... you actually did it? 😱 (We weren't prepared for this...)");
-            return 10;
-          }
-          
-          return newTime;
-        });
-      }, 100);
-    }
-    
-    return () => clearInterval(interval);
-  }, [currentGame, isHovering, gameState]);
-
-  // Click Game Timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (currentGame === 'click' && gameState === 'playing' && clickTimeLeft > 0) {
-      interval = setInterval(() => {
-        setClickTimeLeft(prev => {
-          if (prev <= 1) {
-            if (clickCount >= clickTarget) {
-              setGameState('won');
-              setSarcasticMessage("Impossible! You actually clicked fast enough! 🤯");
-            } else {
-              setGameState('lost');
-              setSarcasticMessage("Time's up! Your clicking skills need work! ⏰");
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    
-    return () => clearInterval(interval);
-  }, [currentGame, gameState, clickTimeLeft, clickCount, clickTarget]);
-
-  // Avoid Game Logic
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (currentGame === 'avoid' && gameState === 'playing') {
-      interval = setInterval(() => {
-        setObstacles(prev => {
-          const newObstacles = prev.map(obstacle => ({
-            ...obstacle,
-            x: obstacle.x + (Math.random() - 0.5) * 10,
-            y: obstacle.y + (Math.random() - 0.5) * 10
-          })).filter(obstacle => 
-            obstacle.x >= 0 && obstacle.x <= 100 && 
-            obstacle.y >= 0 && obstacle.y <= 100
-          );
-          
-          if (Math.random() < 0.3 && newObstacles.length < 8) {
-            newObstacles.push({
-              id: Math.random().toString(),
-              x: Math.random() * 100,
-              y: Math.random() * 100
-            });
-          }
-          
-          return newObstacles;
-        });
-        
-        setAvoidScore(prev => prev + 1);
-      }, 500);
-    }
-    
-    return () => clearInterval(interval);
-  }, [currentGame, gameState]);
-
-  // Memory Game Logic
-  const startMemorySequence = useCallback(() => {
-    const sequence = Array.from({ length: memoryLevel + 2 }, () => Math.floor(Math.random() * 4));
-    setMemorySequence(sequence);
-    setPlayerSequence([]);
-    setShowingSequence(true);
-    
-    sequence.forEach((num, index) => {
-      setTimeout(() => {
-        // Flash the button
-        const button = document.getElementById(`memory-btn-${num}`);
-        if (button) {
-          button.classList.add('bg-white');
-          setTimeout(() => button.classList.remove('bg-white'), 300);
-        }
-        
-        if (index === sequence.length - 1) {
-          setTimeout(() => setShowingSequence(false), 500);
-        }
-      }, (index + 1) * 600);
-    });
-  }, [memoryLevel]);
-
-  const handleMemoryClick = (buttonIndex: number) => {
-    if (showingSequence) return;
-    
-    const newPlayerSequence = [...playerSequence, buttonIndex];
-    setPlayerSequence(newPlayerSequence);
-    
-    if (newPlayerSequence[newPlayerSequence.length - 1] !== memorySequence[newPlayerSequence.length - 1]) {
-      setGameState('lost');
-      setSarcasticMessage("Wrong! Your memory is as bad as your focus! 🧠💥");
-      return;
-    }
-    
-    if (newPlayerSequence.length === memorySequence.length) {
-      if (memoryLevel >= 5) {
-        setGameState('won');
-        setSarcasticMessage("Incredible! You remembered something! 🎉");
-      } else {
-        setMemoryLevel(prev => prev + 1);
-        setSarcasticMessage(`Level ${memoryLevel + 1}! Don't get cocky! 😤`);
-        setTimeout(() => startMemorySequence(), 1000);
-      }
+  const getPopupColor = (type: string) => {
+    switch (type) {
+      case 'alert': return 'bg-red-500 border-red-700';
+      case 'news': return 'bg-blue-500 border-blue-700';
+      case 'prize': return 'bg-yellow-500 border-yellow-700';
+      case 'warning': return 'bg-orange-500 border-orange-700';
+      default: return 'bg-purple-500 border-purple-700';
     }
   };
 
-  // Target movement effect
-  useEffect(() => {
-    if ((currentGame === 'hover' || currentGame === 'click') && gameState === 'playing') {
-      moveIntervalRef.current = setInterval(() => {
-        moveTarget();
-      }, Math.random() * 2000 + 1000);
-    }
-    
-    return () => {
-      if (moveIntervalRef.current) {
-        clearInterval(moveIntervalRef.current);
-      }
-    };
-  }, [currentGame, gameState, moveTarget]);
+  if (!currentGameInfo) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-500 via-purple-600 to-blue-700 flex items-center justify-center">
+        <div className="text-center text-white">
+          <h1 className="text-4xl font-black mb-4">Game Not Found! 😵</h1>
+          <p className="text-xl mb-8">This game doesn't exist... yet! 🤔</p>
+          <Link
+            to="/game"
+            className="bg-gradient-to-r from-red-500 to-pink-600 text-white font-black py-3 px-6 rounded-lg hover:scale-110 transform transition-all"
+          >
+            Back to Game Selection
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-  // Popup spawning effect
-  useEffect(() => {
-    if (gameState === 'playing') {
-      popupIntervalRef.current = setInterval(() => {
-        if (Math.random() < 0.3) {
-          createPopup();
-        }
-      }, 2000);
-    }
-    
-    return () => {
-      if (popupIntervalRef.current) {
-        clearInterval(popupIntervalRef.current);
-      }
-    };
-  }, [gameState, createPopup]);
-
-  // Background cycling effect
-  useEffect(() => {
-    backgroundIntervalRef.current = setInterval(() => {
-      setBackgroundMode(prev => (prev + 1) % 4);
-    }, 5000);
-    
-    return () => {
-      if (backgroundIntervalRef.current) {
-        clearInterval(backgroundIntervalRef.current);
-      }
-    };
-  }, []);
-
-  // Sarcastic message cycling
-  useEffect(() => {
-    if (gameState === 'playing') {
-      sarcasticIntervalRef.current = setInterval(() => {
-        if (Math.random() < 0.2) {
-          changeSarcasticMessage();
-        }
-      }, 3000);
-    }
-    
-    return () => {
-      if (sarcasticIntervalRef.current) {
-        clearInterval(sarcasticIntervalRef.current);
-      }
-    };
-  }, [gameState, changeSarcasticMessage]);
+  const GameIcon = currentGameInfo.icon;
 
   return (
-    <div className={`relative min-h-screen overflow-hidden ${
-      backgroundMode === 0 ? 'bg-gradient-to-br from-purple-500 to-pink-500' :
-      backgroundMode === 1 ? 'bg-gradient-to-br from-blue-500 to-green-500' :
-      backgroundMode === 2 ? 'bg-gradient-to-br from-yellow-500 to-red-500' :
-      'bg-gradient-to-br from-indigo-500 to-purple-500'
-    }`}>
-      {/* Game Selection */}
-      {gameState === 'playing' && (
-        <div className="absolute top-4 left-4 space-y-2">
-          {games.map(game => (
-            <button
-              key={game.id}
-              onClick={() => switchGame(game.id)}
-              className={`${game.color} p-2 rounded-lg flex items-center space-x-2 text-white ${
-                currentGame === game.id ? 'ring-2 ring-white' : ''
-              }`}
-            >
-              <game.icon className="w-5 h-5" />
-              <span>{game.name}</span>
-            </button>
-          ))}
+    <div className={`min-h-screen transition-all duration-1000 ${backgroundClasses[backgroundMode]} relative overflow-hidden`}>
+      {/* Floating Emojis */}
+      {floatingEmojis.map((emoji, index) => (
+        <div
+          key={index}
+          className="fixed text-4xl sm:text-6xl animate-bounce pointer-events-none z-10"
+          style={{
+            left: `${Math.random() * 80 + 10}%`,
+            top: `${Math.random() * 80 + 10}%`,
+            animationDuration: `${1 + Math.random()}s`
+          }}
+        >
+          {emoji}
         </div>
-      )}
+      ))}
 
-      {/* Game Area */}
-      <div
-        ref={gameAreaRef}
-        className="relative w-full h-full min-h-[500px] flex items-center justify-center"
-        onMouseMove={(e) => {
-          if (currentGame === 'avoid' && gameState === 'playing') {
-            const rect = gameAreaRef.current?.getBoundingClientRect();
-            if (rect) {
-              const x = ((e.clientX - rect.left) / rect.width) * 100;
-              const y = ((e.clientY - rect.top) / rect.height) * 100;
-              // Check collision with obstacles here
-              const collision = obstacles.some(obs => 
-                Math.abs(obs.x - x) < 5 && Math.abs(obs.y - y) < 5
-              );
-              if (collision) {
-                setGameState('lost');
-                setSarcasticMessage("Ouch! That looked painful! 🤕");
-              }
-            }
-          }
-        }}
-      >
-        {/* Target for Hover and Click games */}
-        {(currentGame === 'hover' || currentGame === 'click') && (
+      {/* Floating particles */}
+      <div className="fixed inset-0 pointer-events-none">
+        {Array.from({ length: 15 }).map((_, i) => (
           <div
-            ref={targetRef}
-            className={`absolute w-16 h-16 rounded-lg cursor-pointer transform transition-transform ${
-              currentGame === 'hover' ? 'bg-red-500' : 'bg-blue-500'
-            } ${shakeIntensity > 0 ? 'animate-shake' : ''}`}
+            key={i}
+            className="absolute w-1 h-1 sm:w-2 sm:h-2 bg-white rounded-full opacity-60 animate-ping"
             style={{
-              left: `${targetPosition.x}%`,
-              top: `${targetPosition.y}%`,
-              transform: `translate(-50%, -50%) scale(${isHovering ? 1.1 : 1})`
-            }}
-            onMouseEnter={() => currentGame === 'hover' && setIsHovering(true)}
-            onMouseLeave={() => currentGame === 'hover' && setIsHovering(false)}
-            onClick={() => {
-              if (currentGame === 'click' && gameState === 'playing') {
-                setClickCount(prev => {
-                  const newCount = prev + 1;
-                  if (newCount >= clickTarget) {
-                    setGameState('won');
-                    setSarcasticMessage("What?! You actually did it! 🎯");
-                  }
-                  return newCount;
-                });
-                moveTarget();
-              }
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${2 + Math.random() * 2}s`
             }}
           />
-        )}
+        ))}
+      </div>
 
-        {/* Memory Game Buttons */}
-        {currentGame === 'memory' && (
-          <div className="grid grid-cols-2 gap-4">
-            {[0, 1, 2, 3].map(index => (
-              <button
-                key={index}
-                id={`memory-btn-${index}`}
-                onClick={() => handleMemoryClick(index)}
-                disabled={showingSequence || gameState !== 'playing'}
-                className={`w-24 h-24 rounded-lg transition-colors ${
-                  index === 0 ? 'bg-red-500' :
-                  index === 1 ? 'bg-blue-500' :
-                  index === 2 ? 'bg-green-500' :
-                  'bg-yellow-500'
-                }`}
-              />
+      {/* Chaos Popups */}
+      {popups.map((popup) => (
+        <div
+          key={popup.id}
+          className={`fixed z-30 ${getPopupColor(popup.type)} text-white px-3 py-2 rounded-lg border-2 shadow-lg animate-bounce text-xs sm:text-sm font-bold cursor-pointer hover:scale-110 transform transition-all`}
+          style={{
+            left: `${popup.x}%`,
+            top: `${popup.y}%`,
+            animation: 'bounce 1s infinite, pulse 2s infinite alternate'
+          }}
+          onClick={() => setPopups(prev => prev.filter(p => p.id !== popup.id))}
+        >
+          {popup.message}
+        </div>
+      ))}
+
+      <div className="relative z-20 container mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center mb-4">
+            <GameIcon className="w-8 h-8 sm:w-12 sm:h-12 text-yellow-400 mr-3" />
+            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white drop-shadow-lg transform rotate-1 hover:rotate-3 transition-transform cursor-pointer">
+              {currentGameInfo.name}
+            </h1>
+            {currentGameInfo.emojis.map((emoji, i) => (
+              <span key={i} className="text-2xl sm:text-4xl ml-2 animate-bounce" style={{ animationDelay: `${i * 0.2}s` }}>
+                {emoji}
+              </span>
             ))}
           </div>
-        )}
 
-        {/* Avoid Game Obstacles */}
-        {currentGame === 'avoid' && obstacles.map(obstacle => (
-          <div
-            key={obstacle.id}
-            className="absolute w-4 h-4 bg-red-500 rounded-full"
-            style={{
-              left: `${obstacle.x}%`,
-              top: `${obstacle.y}%`,
-              transform: 'translate(-50%, -50%)'
-            }}
-          />
-        ))}
+          <p className="text-lg sm:text-xl text-yellow-300 font-bold mb-6">
+            {currentGameInfo.description}
+          </p>
+        </div>
 
-        {/* Popups */}
-        {popups.map(popup => (
-          <div
-            key={popup.id}
-            className={`absolute p-3 rounded-lg shadow-lg transform -translate-x-1/2 -translate-y-1/2 ${
-              popup.type === 'alert' ? 'bg-red-500' :
-              popup.type === 'warning' ? 'bg-yellow-500' :
-              popup.type === 'prize' ? 'bg-green-500' :
-              'bg-blue-500'
-            } text-white`}
-            style={{ left: `${popup.x}%`, top: `${popup.y}%` }}
-          >
-            {popup.message}
+        {/* Sarcastic AI Messages */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="bg-black bg-opacity-60 p-4 sm:p-6 rounded-xl border-4 border-yellow-400 transform -rotate-1">
+            <div className="flex items-center justify-center mb-3">
+              <Sparkles className="w-6 h-6 text-yellow-400 mr-2 animate-spin" />
+              <h3 className="text-lg sm:text-xl font-black text-white">Sarcastic AI Says:</h3>
+              <Sparkles className="w-6 h-6 text-yellow-400 ml-2 animate-spin" />
+            </div>
+            <p className="text-white font-bold text-center text-sm sm:text-lg">
+              {sarcasticMessage}
+            </p>
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Game Status */}
-      <div className="absolute top-4 right-4 text-white text-xl font-bold">
-        {currentGame === 'hover' && `Time: ${timeHovered.toFixed(1)}s / 10s`}
-        {currentGame === 'click' && `Clicks: ${clickCount} / ${clickTarget} (${clickTimeLeft}s)`}
-        {currentGame === 'avoid' && `Score: ${avoidScore}`}
-        {currentGame === 'memory' && `Level: ${memoryLevel}`}
-      </div>
+        {/* Game Area */}
+        <div className="max-w-4xl mx-auto">
+          {gameState === 'playing' && (
+            <>
+              {gameId === 'hover' && (
+                <HoverGame
+                  playerName={playerName}
+                  onGameEnd={handleGameEnd}
+                  onSarcasticMessage={handleSarcasticMessage}
+                />
+              )}
+              {gameId === 'click' && (
+                <ClickGame
+                  playerName={playerName}
+                  onGameEnd={handleGameEnd}
+                  onSarcasticMessage={handleSarcasticMessage}
+                />
+              )}
+              {gameId === 'avoid' && (
+                <AvoidGame
+                  playerName={playerName}
+                  onGameEnd={handleGameEnd}
+                  onSarcasticMessage={handleSarcasticMessage}
+                />
+              )}
+            </>
+          )}
 
-      {/* Sarcastic Message */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-xl font-bold text-center">
-        {sarcasticMessage}
+          {/* Game End Screen */}
+          {gameState !== 'playing' && (
+            <div className="text-center space-y-6">
+              <div className="bg-black bg-opacity-60 p-6 sm:p-8 rounded-xl border-4 border-yellow-400">
+                <div className="mb-6">
+                  {gameState === 'won' ? (
+                    <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+                  ) : (
+                    <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+                  )}
+
+                  <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
+                    {gameState === 'won' ? 'IMPOSSIBLE VICTORY!' : 'EPIC FAIL!'}
+                  </h2>
+
+                  <p className="text-lg sm:text-xl text-yellow-300 font-bold mb-4">
+                    Final Score: {finalScore}
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={resetGame}
+                    className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-black py-3 px-6 rounded-lg transform hover:scale-110 hover:rotate-3 transition-all text-lg shadow-lg border-4 border-white flex items-center justify-center"
+                  >
+                    <RefreshCw className="w-5 h-5 mr-2" />
+                    Try Again (Glutton for Punishment?)
+                  </button>
+
+                  <Link
+                    to="/game"
+                    className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-black py-3 px-6 rounded-lg transform hover:scale-110 hover:-rotate-3 transition-all text-lg shadow-lg border-4 border-white flex items-center justify-center"
+                  >
+                    <Home className="w-5 h-5 mr-2" />
+                    Choose Different Torture
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation Footer */}
+        <div className="mt-8 text-center">
+          <Link
+            to="/game"
+            className="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg hover:bg-opacity-70 transition-all transform hover:scale-105 inline-flex items-center"
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Back to Game Selection
+          </Link>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default GamePage;

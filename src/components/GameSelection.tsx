@@ -53,12 +53,12 @@ const GameSelection = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setBackgroundMode(prev => (prev + 1) % 4);
-      
+
       // Add random floating emojis
       if (Math.random() < 0.4) {
         const newEmoji = emojis[Math.floor(Math.random() * emojis.length)];
         setFloatingEmojis(prev => [...prev, newEmoji]);
-        
+
         // Remove emoji after animation
         setTimeout(() => {
           setFloatingEmojis(prev => prev.slice(1));
@@ -74,9 +74,9 @@ const GameSelection = () => {
       alert('Please enter your name first! We need someone to blame for the inevitable failure! 😈');
       return;
     }
-    
-    navigate(`/play/${gameId}`, { 
-      state: { playerName: playerName.trim() } 
+
+    navigate(`/play/${gameId}`, {
+      state: { playerName: playerName.trim() }
     });
   };
 
@@ -120,7 +120,7 @@ const GameSelection = () => {
             Choose Your Torture! 🎮
           </h1>
           <p className="text-lg sm:text-xl lg:text-2xl text-yellow-300 font-bold transform -rotate-1 max-w-4xl mx-auto">
-            Pick a game and prepare for the most frustrating experience of your life! 
+            Pick a game and prepare for the most frustrating experience of your life!
             <br className="hidden sm:block" />
             Each one is specially designed to break your spirit! 😈
           </p>
@@ -177,11 +177,11 @@ const GameSelection = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <p className="text-gray-300 text-sm sm:text-base mb-4 leading-relaxed">
                     {game.description}
                   </p>
-                  
+
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-red-400 font-bold text-sm">
                       Difficulty: {game.difficulty}
@@ -192,7 +192,7 @@ const GameSelection = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <button
                     className={`w-full bg-gradient-to-r ${game.color} hover:scale-110 text-white font-black py-3 px-6 rounded-lg transform transition-all text-lg shadow-lg border-2 border-white flex items-center justify-center space-x-2`}
                     disabled={!playerName.trim()}
@@ -215,8 +215,8 @@ const GameSelection = () => {
               <Sparkles className="w-6 h-6 text-yellow-400 ml-2" />
             </div>
             <p className="text-white font-bold text-center text-sm sm:text-base">
-              ⚠️ These games are scientifically designed to be impossible! Side effects may include: 
-              uncontrollable laughter, mild frustration, and an irresistible urge to throw your mouse! 
+              ⚠️ These games are scientifically designed to be impossible! Side effects may include:
+              uncontrollable laughter, mild frustration, and an irresistible urge to throw your mouse!
               We are not responsible for any damage to your ego or computer equipment! ⚠️
             </p>
           </div>

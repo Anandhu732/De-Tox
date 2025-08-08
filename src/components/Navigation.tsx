@@ -18,8 +18,8 @@ const Navigation = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex items-center space-x-2 transform hover:scale-110 transition-transform"
           >
             <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-red-500 rounded-lg animate-spin">
@@ -40,10 +40,10 @@ const Navigation = () => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`px-3 py-2 rounded-lg text-sm font-bold transform transition-all duration-200 hover:scale-110 hover:rotate-3 ${
-                      isActive 
-                        ? 'bg-white text-purple-900 animate-pulse' 
-                        : `text-white hover:bg-white hover:bg-opacity-20 ${item.color}`
+                    className={`px-3 py-2 rounded-lg text-sm font-bold transform transition-all duration-200 hover:scale-105 hover:rotate-1 ${
+                      isActive
+                        ? 'bg-white text-purple-900 shadow-lg'
+                        : `text-white hover:bg-white hover:bg-opacity-20 ${item.color} hover:shadow-md`
                     }`}
                   >
                     <Icon className="inline w-4 h-4 mr-1" />
@@ -79,8 +79,8 @@ const Navigation = () => {
                   to={item.path}
                   onClick={() => setIsOpen(false)}
                   className={`block px-3 py-2 rounded-lg text-base font-bold transform transition-all ${
-                    isActive 
-                      ? 'bg-white text-purple-900 animate-pulse' 
+                    isActive
+                      ? 'bg-white text-purple-900 animate-pulse'
                       : `text-white hover:bg-white hover:bg-opacity-20 ${item.color}`
                   }`}
                 >
