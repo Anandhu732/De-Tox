@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom animations for extra chaos */
+@keyframes wobble {
+  0%, 100% { transform: rotate(-3deg); }
+  25% { transform: rotate(3deg); }
+  50% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes rainbow {
+  0% { background: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff); }
+  16% { background: linear-gradient(45deg, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff); }
+  33% { background: linear-gradient(45deg, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff); }
+  50% { background: linear-gradient(45deg, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff); }
+  66% { background: linear-gradient(45deg, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff, #ff0080); }
+  83% { background: linear-gradient(45deg, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff, #ff0080, #ff0000); }
+  100% { background: linear-gradient(45deg, #00ffff, #0080ff, #0000ff, #8000ff, #ff0080, #ff0000, #ff8000); }
+}
+
+.wobble {
+  animation: wobble 2s ease-in-out infinite;
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out infinite;
+}
+
+.rainbow-bg {
+  animation: rainbow 3s linear infinite;
+}
+
+/* Prevent text selection to maintain chaos */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Custom cursor for extra annoyance */
+body {
+  cursor: crosshair;
+}
+
+/* Make everything slightly tilted for maximum chaos */
+.tilt-1 { transform: rotate(1deg); }
+.tilt-2 { transform: rotate(-1deg); }
+.tilt-3 { transform: rotate(2deg); }
+.tilt-4 { transform: rotate(-2deg); }
+
+/* Glitch effect for text */
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.glitch {
+  animation: glitch 0.3s infinite;
+}
+
+/* Pulsing borders */
+@keyframes pulse-border {
+  0%, 100% { border-color: #ff0000; }
+  25% { border-color: #00ff00; }
+  50% { border-color: #0000ff; }
+  75% { border-color: #ffff00; }
+}
+
+.pulse-border {
+  animation: pulse-border 1s infinite;
+}
