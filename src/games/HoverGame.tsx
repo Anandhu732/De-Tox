@@ -106,84 +106,140 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
   const moveTarget = useCallback(() => {
     if (!gameActive) return;
 
-    // Check if mouse is close to target - if so, make it run away!
+    // Calculate distance between mouse and target
     const distanceToMouse = Math.sqrt(
       Math.pow(mousePosition.x - targetPosition.x, 2) +
       Math.pow(mousePosition.y - targetPosition.y, 2)
     );
 
-    const moveType = Math.random();
     let newPosition = { x: 50, y: 50 };
 
-    if (distanceToMouse < 20) { // Player is getting close - RUN AWAY!
+    // AGGRESSIVE EVASION - Target runs away when cursor gets close
+    if (distanceToMouse < 30) { // Increased detection range
+      // Calculate escape vector - target moves away from cursor
       const angle = Math.atan2(
         targetPosition.y - mousePosition.y,
         targetPosition.x - mousePosition.x
       );
-      const distance = 25 + Math.random() * 15;
+      
+      // Much larger escape distance - make it REALLY hard
+      const escapeDistance = 35 + Math.random() * 25; // Increased from 15 to 25
+      
       newPosition = {
-        x: Math.min(85, Math.max(15, targetPosition.x + Math.cos(angle) * distance)),
-        y: Math.min(85, Math.max(15, targetPosition.y + Math.sin(angle) * distance))
+        x: Math.min(90, Math.max(10, targetPosition.x + Math.cos(angle) * escapeDistance)),
+        y: Math.min(90, Math.max(10, targetPosition.y + Math.sin(angle) * escapeDistance))
       };
-      setShakeIntensity(5);
-      setBgHue(prev => (prev + 90) % 360);
-      playSound(900, 'square', 0.25);
-      onSarcasticMessage(`🏃‍♂️ Nope! The box is escaping from ${playerName}!`);
+      
+      // If target would go out of bounds, try opposite direction or teleport to center opposite side
+      if (newPosition.x <= 10 || newPosition.x >= 90 || newPosition.y <= 10 || newPosition.y >= 90) {
+        // Teleport to opposite side of the play area
+        newPosition = {
+          x: mousePosition.x < 50 ? 75 + Math.random() * 15 : 10 + Math.random() * 15,
+          y: mousePosition.y < 50 ? 75 + Math.random() * 15 : 10 + Math.random() * 15
+        };
+      }
+      
+      setShakeIntensity(8); // Increased shake
+      setBgHue(prev => (prev + 120) % 360); // More dramatic color change
+      playSound(1000, 'square', 0.3);
+      onSarcasticMessage(`🏃‍♂️💨 NOPE! The box says BYE ${playerName}!`);
 
-      // Create mocking popup
-      const mockingId = Math.random().toString(36).substr(2, 9);
-      const mockingMessage = mockingMessages[Math.floor(Math.random() * mockingMessages.length)];
-      setMockingPopups(prev => [...prev.slice(-2), {
-        id: mockingId,
-        message: mockingMessage,
-        x: Math.random() * 60 + 20,
-        y: Math.random() * 60 + 20
-      }]);
-      setTimeout(() => {
-        setMockingPopups(prev => prev.filter(p => p.id !== mockingId));
-      }, 2000);
+      // Create multiple mocking popups for extra frustration
+      for (let i = 0; i < 2; i++) {
+        const mockingId = Math.random().toString(36).substr(2, 9);
+        const mockingMessage = mockingMessages[Math.floor(Math.random() * mockingMessages.length)];
+        setMockingPopups(prev => [...prev.slice(-1), {
+          id: mockingId,
+          message: mockingMessage,
+          x: Math.random() * 70 + 15,
+          y: Math.random() * 70 + 15
+        }]);
+        setTimeout(() => {
+          setMockingPopups(prev => prev.filter(p => p.id !== mockingId));
+        }, 1500 + i * 500);
+      }
 
-    } else if (moveType < 0.15) { // Reduced teleport frequency for better gameplay
-      newPosition = getRandomPosition();
+    } else if (distanceToMouse < 50) { // Medium range - nervous movement
+      // Target gets nervous and moves unpredictably
+      const nervousDistance = 15 + Math.random() * 20;
+      const nervousAngle = Math.random() * Math.PI * 2;
+      
+      newPosition = {
+        x: Math.min(85, Math.max(15, targetPosition.x + Math.cos(nervousAngle) * nervousDistance)),
+        y: Math.min(85, Math.max(15, targetPosition.y + Math.sin(nervousAngle) * nervousDistance))
+      };
+      
       setShakeIntensity(4);
-      setBgHue(prev => (prev + 45) % 360);
-      playSound(700, 'square', 0.2);
-      onSarcasticMessage(`Teleport! The box escaped from ${playerName}! 🌟`);
-    } else if (moveType < 0.4) { // Predictable jumps
-      newPosition = {
-        x: Math.min(85, Math.max(15, targetPosition.x + (Math.random() - 0.5) * 30)),
-        y: Math.min(85, Math.max(15, targetPosition.y + (Math.random() - 0.5) * 30))
-      };
-      setShakeIntensity(3);
-      playSound(500, 'triangle', 0.15);
-    } else if (moveType < 0.8) { // Smooth drift - ADHD friendly
-      newPosition = {
-        x: Math.min(85, Math.max(15, targetPosition.x + (Math.random() - 0.5) * 15)),
-        y: Math.min(85, Math.max(15, targetPosition.y + (Math.random() - 0.5) * 15))
-      };
-      setShakeIntensity(1);
-    } else { // Gentle spiral movement
-      const time = Date.now() / 1000;
-      const centerX = 50;
-      const centerY = 50;
-      const radius = 20 + Math.sin(time) * 10;
-      newPosition = {
-        x: Math.min(85, Math.max(15, centerX + Math.cos(time * 0.5) * radius)),
-        y: Math.min(85, Math.max(15, centerY + Math.sin(time * 0.5) * radius))
-      };
-      setShakeIntensity(0.5);
+      playSound(600, 'triangle', 0.15);
+      
+      if (Math.random() < 0.3) {
+        onSarcasticMessage(`😰 The box is getting nervous around ${playerName}!`);
+      }
+      
+    } else {
+      // When cursor is far, target moves more predictably but still challenging
+      const moveType = Math.random();
+      
+      if (moveType < 0.2) { // Random teleport to make it harder
+        newPosition = getRandomPosition();
+        setShakeIntensity(5);
+        setBgHue(prev => (prev + 60) % 360);
+        playSound(800, 'square', 0.25);
+        onSarcasticMessage(`✨ Surprise teleport! Can't catch ${playerName}! 🌟`);
+        
+      } else if (moveType < 0.5) { // Drift toward center but away from cursor
+        const centerX = 50;
+        const centerY = 50;
+        
+        // Move toward center but bias away from cursor
+        const toCenterX = (centerX - targetPosition.x) * 0.3;
+        const toCenterY = (centerY - targetPosition.y) * 0.3;
+        
+        const awayCursorX = (targetPosition.x - mousePosition.x) * 0.1;
+        const awayCursorY = (targetPosition.y - mousePosition.y) * 0.1;
+        
+        newPosition = {
+          x: Math.min(80, Math.max(20, targetPosition.x + toCenterX + awayCursorX + (Math.random() - 0.5) * 10)),
+          y: Math.min(80, Math.max(20, targetPosition.y + toCenterY + awayCursorY + (Math.random() - 0.5) * 10))
+        };
+        
+        setShakeIntensity(2);
+        
+      } else { // Orbital movement around center, avoiding cursor
+        const time = Date.now() / 1000;
+        const centerX = 50;
+        const centerY = 50;
+        const radius = 25 + Math.sin(time * 0.7) * 15;
+        
+        // Add cursor avoidance to orbital movement
+        let orbitAngle = time * 0.4;
+        const cursorAngle = Math.atan2(mousePosition.y - centerY, mousePosition.x - centerX);
+        
+        // Avoid cursor by adjusting orbit angle
+        const angleDiff = ((orbitAngle - cursorAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+        if (Math.abs(angleDiff) < Math.PI / 3) {
+          orbitAngle += Math.sign(angleDiff) * Math.PI / 2; // Jump away by 90 degrees
+        }
+        
+        newPosition = {
+          x: Math.min(85, Math.max(15, centerX + Math.cos(orbitAngle) * radius)),
+          y: Math.min(85, Math.max(15, centerY + Math.sin(orbitAngle) * radius))
+        };
+        
+        setShakeIntensity(1);
+      }
     }
 
     setTargetPosition(newPosition);
-    setTargetSize(0.9 + Math.random() * 0.3); // Dynamic size for engagement
+    setTargetSize(0.8 + Math.random() * 0.4); // More size variation
 
-    // Encourage mode after player shows commitment
-    if (timeHovered > 3 && !encouragementMode) {
+    // Make encouragement mode harder to achieve and less helpful
+    if (timeHovered > 5 && !encouragementMode) { // Increased from 3 to 5 seconds
       setEncouragementMode(true);
-      onSarcasticMessage(`🎉 ${playerName} is actually trying! Keep it up! 💪`);
+      onSarcasticMessage(`🎉 ${playerName} lasted 5 seconds! The box is impressed... but still running! 💪`);
     }
 
-    setTimeout(() => setShakeIntensity(0), 250);
+    setTimeout(() => setShakeIntensity(0), 300);
   }, [getRandomPosition, gameActive, targetPosition.x, targetPosition.y, playerName, onSarcasticMessage, playSound, timeHovered, encouragementMode, mousePosition.x, mousePosition.y, mockingMessages, setMockingPopups]);
 
   // Enhanced timer effect with better feedback
@@ -211,11 +267,37 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
             return newStreak;
           });
 
-          // Occasional sabotage but much fairer
-          if (Math.random() < 0.005 && newTime > 2) { // Very rare, only after 2 seconds
-            onSarcasticMessage(`Tiny hiccup! But ${playerName} is unstoppable! 💪`);
-            playSound(150, 'sawtooth', 0.3);
-            return Math.max(0, prev - 0.5); // Much smaller penalty
+          // More frequent and aggressive sabotage
+          if (Math.random() < 0.012 && newTime > 1.5) { // More frequent, starts earlier
+            const sabotageAmount = Math.random() * 1.5 + 0.5; // Larger penalty (0.5-2 seconds)
+            const finalTime = Math.max(0, prev - sabotageAmount);
+            onSarcasticMessage(`💥 SABOTAGE! The box played a dirty trick on ${playerName}! -${sabotageAmount.toFixed(1)}s �`);
+            playSound(100, 'sawtooth', 0.5);
+            
+            // Create angry popup
+            const sabotageId = Math.random().toString(36).substr(2, 9);
+            setMockingPopups(prevPopups => [...prevPopups.slice(-2), {
+              id: sabotageId,
+              message: `💥 GOTCHA! -${sabotageAmount.toFixed(1)}s`,
+              x: Math.random() * 50 + 25,
+              y: Math.random() * 50 + 25
+            }]);
+            setTimeout(() => {
+              setMockingPopups(prevPopups => prevPopups.filter(p => p.id !== sabotageId));
+            }, 2500);
+            
+            return finalTime;
+          }
+
+          // Extra challenge after 7 seconds - target becomes EXTRA evasive
+          if (newTime > 7) {
+            // Trigger emergency evasion - make the target run away immediately
+            if (Math.random() < 0.15) { // 15% chance every 0.1 second after 7s
+              onSarcasticMessage(`🚨 FINAL STRETCH! The box is in PANIC MODE! 🏃‍♂️💨`);
+              playSound(1200, 'square', 0.4);
+              // Force target to move immediately
+              setTimeout(() => moveTarget(), 10);
+            }
           }
 
           // Victory condition
@@ -240,35 +322,60 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
         });
       }, 100);
     } else if (!isHovering && gameActive && timeHovered > 0) {
-      // Gentle decrease when not hovering - ADHD friendly
+      // Much faster decay when not hovering - make it REALLY challenging
       interval = setInterval(() => {
         setTimeHovered(prev => {
-          const newTime = Math.max(0, prev - 0.02); // Much slower decay
+          const decayRate = prev > 5 ? 0.08 : 0.05; // Faster decay after 5 seconds
+          const newTime = Math.max(0, prev - decayRate);
+          
           if (prev > 0 && newTime === 0) {
             setStreak(0);
             setEncouragementMode(false);
-            playSound(200, 'sine', 0.5);
+            playSound(150, 'sine', 0.7);
+            onSarcasticMessage(`💔 ${playerName} lost it! Back to square one! 😈`);
+          } else if (prev > 2 && newTime <= 2) {
+            onSarcasticMessage(`⚠️ ${playerName} is losing progress! Quick, catch it! 😱`);
           }
+          
           return newTime;
         });
       }, 100);
     }
 
     return () => clearInterval(interval);
-  }, [isHovering, gameActive, playerName, onGameEnd, onSarcasticMessage, playSound, timeHovered, streak, encouragementMode]);
+  }, [isHovering, gameActive, playerName, onGameEnd, onSarcasticMessage, playSound, timeHovered, streak, encouragementMode, moveTarget, setMockingPopups]);
 
-  // Target movement effect - adaptive difficulty
+  // Target movement effect - much more aggressive and responsive
   useEffect(() => {
     if (gameActive) {
-      // Much faster movement when player is doing well - make it harder!
-      const baseInterval = encouragementMode ? 800 : 1200; // Faster than before
-      const randomVariation = Math.random() * 500;
+      // Calculate dynamic interval based on cursor proximity and hover time
+      const distanceToMouse = Math.sqrt(
+        Math.pow(mousePosition.x - targetPosition.x, 2) +
+        Math.pow(mousePosition.y - targetPosition.y, 2)
+      );
+      
+      // The closer the cursor, the faster the target moves (more frequent updates)
+      let baseInterval = 400; // Much faster base interval
+      
+      if (distanceToMouse < 30) {
+        baseInterval = 150; // Very fast when cursor is close
+      } else if (distanceToMouse < 50) {
+        baseInterval = 250; // Fast when cursor is nearby
+      } else if (encouragementMode) {
+        baseInterval = 300; // Still fast in encouragement mode
+      }
+      
+      // Add difficulty scaling based on hover time - gets harder as player progresses
+      const difficultyMultiplier = Math.max(0.3, 1 - (timeHovered * 0.08)); // Gets up to 70% faster
+      baseInterval *= difficultyMultiplier;
+      
+      const randomVariation = Math.random() * 200; // Less variation, more consistent challenge
 
       moveIntervalRef.current = setInterval(() => {
         moveTarget();
 
-        // More frequent sarcastic messages
-        const messageChance = encouragementMode ? 0.2 : 0.3;
+        // Much more frequent sarcastic messages when target is being chased
+        const messageChance = distanceToMouse < 30 ? 0.6 : (encouragementMode ? 0.25 : 0.35);
         if (Math.random() < messageChance) {
           const message = sarcasticMessages[Math.floor(Math.random() * sarcasticMessages.length)];
           onSarcasticMessage(message);
@@ -281,28 +388,36 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
         clearInterval(moveIntervalRef.current);
       }
     };
-  }, [moveTarget, gameActive, onSarcasticMessage, sarcasticMessages, encouragementMode]);
+  }, [moveTarget, gameActive, onSarcasticMessage, sarcasticMessages, encouragementMode, mousePosition.x, mousePosition.y, targetPosition.x, targetPosition.y, timeHovered]);
 
-  // Constant mocking popup generation to irritate player
+  // Constant mocking popup generation to irritate player - MUCH MORE AGGRESSIVE
   useEffect(() => {
     if (gameActive) {
       const popupInterval = setInterval(() => {
-        const mockingId = Math.random().toString(36).substr(2, 9);
-        const mockingMessage = mockingMessages[Math.floor(Math.random() * mockingMessages.length)];
-        setMockingPopups(prev => [...prev.slice(-3), {
-          id: mockingId,
-          message: mockingMessage,
-          x: Math.random() * 70 + 15,
-          y: Math.random() * 70 + 15
-        }]);
-        setTimeout(() => {
-          setMockingPopups(prev => prev.filter(p => p.id !== mockingId));
-        }, 1500 + Math.random() * 1000);
-      }, 800 + Math.random() * 1200); // Popup every 0.8-2 seconds
+        // More frequent popups when player is doing well (more than 3 seconds)
+        const popupChance = timeHovered > 3 ? 0.8 : 0.6; // 80% chance vs 60%
+        
+        if (Math.random() < popupChance) {
+          const mockingId = Math.random().toString(36).substr(2, 9);
+          const mockingMessage = mockingMessages[Math.floor(Math.random() * mockingMessages.length)];
+          setMockingPopups(prev => [...prev.slice(-2), { // Keep max 3 popups
+            id: mockingId,
+            message: mockingMessage,
+            x: Math.random() * 80 + 10, // Spread across more area
+            y: Math.random() * 80 + 10
+          }]);
+          
+          // Shorter duration for more chaos
+          const duration = timeHovered > 5 ? 1000 : 1200; // Faster when player is doing well
+          setTimeout(() => {
+            setMockingPopups(prev => prev.filter(p => p.id !== mockingId));
+          }, duration + Math.random() * 500);
+        }
+      }, 400 + Math.random() * 600); // Much more frequent: every 0.4-1 second
 
       return () => clearInterval(popupInterval);
     }
-  }, [gameActive, mockingMessages]);
+  }, [gameActive, mockingMessages, timeHovered]);
 
   // Background hue animation
   useEffect(() => {
