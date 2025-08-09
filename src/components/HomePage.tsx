@@ -18,12 +18,12 @@ const HomePage = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setBackgroundMode(prev => (prev + 1) % 4);
-      
+
       // Add random floating emojis
       if (Math.random() < 0.3) {
         const newEmoji = emojis[Math.floor(Math.random() * emojis.length)];
         setFloatingEmojis(prev => [...prev, newEmoji]);
-        
+
         // Remove emoji after animation
         setTimeout(() => {
           setFloatingEmojis(prev => prev.slice(1));
@@ -74,7 +74,7 @@ const HomePage = () => {
             Focus? Never Heard of It! 🤪
           </h1>
           <p className="text-lg sm:text-xl lg:text-2xl text-yellow-300 font-bold transform -rotate-1 max-w-4xl mx-auto">
-            The most impossible game ever created! Try to keep your mouse on a box for 10 seconds. 
+            The most impossible game ever created! Try to keep your mouse on a box for 10 seconds.
             <br className="hidden sm:block" />
             Spoiler alert: You probably can't! 😈
           </p>
@@ -114,7 +114,7 @@ const HomePage = () => {
             className="group bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-black py-3 sm:py-4 px-6 sm:px-8 rounded-lg transform hover:scale-110 hover:rotate-3 transition-all text-lg sm:text-xl shadow-lg border-4 border-white"
           >
             <span className="flex items-center justify-center">
-              Start the Chaos! 
+              Start the Chaos!
               <ArrowRight className="ml-2 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
             </span>
           </Link>
@@ -130,7 +130,7 @@ const HomePage = () => {
         {/* Warning */}
         <div className="mt-8 sm:mt-12 bg-red-600 bg-opacity-80 p-4 sm:p-6 rounded-lg border-4 border-yellow-400 transform -rotate-1 max-w-2xl">
           <p className="text-white font-bold text-center text-sm sm:text-base">
-            ⚠️ WARNING: This game may cause uncontrollable laughter, mild frustration, 
+            ⚠️ WARNING: This game may cause uncontrollable laughter, mild frustration,
             and an irresistible urge to throw your mouse across the room! ⚠️
           </p>
         </div>
