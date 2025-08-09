@@ -31,7 +31,7 @@ const Navigation = () => {
               }}
             />
             <span className="text-white font-black text-lg sm:text-xl transform rotate-1 hidden sm:block">
-              De-Tox
+            Focus? Never!
             </span>
           </Link>
 
