@@ -123,11 +123,6 @@ _Persistent leaderboard displaying player scores with sarcastic status messages 
 
 ### Project Demo
 
-# Video
-
-[https://youtu.be/demo-video-link](Add your demo video link here)
-_Live demonstration of all three impossible games: Hover Hell's evasive targets, Click Chaos's disappearing buttons, and Dodge Disaster's relentless obstacles with commentary_
-
 # Additional Demos
 
 - **Live Demo**: https://de-tox-ten.vercel.app/
