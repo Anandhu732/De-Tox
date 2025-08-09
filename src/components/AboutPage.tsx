@@ -88,6 +88,18 @@ const AboutPage = () => {
       <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <img
+              src="/smily.png"
+              alt="De-Tox Logo"
+              className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 animate-bounce hover:animate-pulse transition-all duration-300 cursor-pointer"
+              style={{
+                filter: `drop-shadow(0 0 15px hsla(${backgroundMode * 90}, 70%, 50%, 0.6)) hue-rotate(${backgroundMode * 90}deg)`,
+              }}
+            />
+          </div>
+
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white drop-shadow-lg transform rotate-1 hover:rotate-3 transition-transform cursor-pointer mb-4">
             {rotatingMessages[rotatingText]}
           </h1>

@@ -68,8 +68,21 @@ const HomePage = () => {
       </div>
 
       <div className="relative z-20 flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8">
-        {/* Main Title */}
+        {/* Logo and Main Title */}
         <div className="text-center mb-8 sm:mb-12">
+          {/* App Logo */}
+          <div className="flex justify-center mb-6">
+            <img
+              src="/smily.png"
+              alt="De-Tox Logo"
+              className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 animate-bounce hover:animate-spin transition-all duration-300 cursor-pointer"
+              style={{
+                filter: `drop-shadow(0 0 20px hsla(${backgroundMode * 90}, 70%, 50%, 0.8)) hue-rotate(${backgroundMode * 90}deg)`,
+                transform: `rotate(${Math.sin(Date.now() * 0.001) * 10}deg)`
+              }}
+            />
+          </div>
+
           <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black text-white drop-shadow-lg transform rotate-1 hover:rotate-3 transition-transform cursor-pointer mb-4">
             Focus? Never Heard of It! 🤪
           </h1>

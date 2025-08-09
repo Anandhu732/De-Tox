@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Trophy, Award, Zap, Target, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getAllScores, formatScore, getGameDisplayName, clearScores, ScoreEntry } from '../utils/scoreManager';
@@ -142,6 +142,20 @@ const LeaderboardPage = () => {
       <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8">
         {/* Header */}
         <div className={`text-center mb-8 sm:mb-12 ${glitchMode ? 'animate-pulse' : ''}`}>
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <img
+              src="/smily.png"
+              alt="De-Tox Logo"
+              className={`w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 transition-all duration-300 cursor-pointer ${
+                glitchMode ? 'animate-spin' : 'animate-pulse hover:animate-bounce'
+              }`}
+              style={{
+                filter: `drop-shadow(0 0 15px hsla(${120 + Math.sin(Date.now() * 0.001) * 60}, 70%, 50%, 0.6)) hue-rotate(${Math.cos(Date.now() * 0.002) * 180}deg)`,
+              }}
+            />
+          </div>
+
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white drop-shadow-lg transform rotate-1 hover:rotate-3 transition-transform cursor-pointer mb-4">
             Hall of Shame 🏆
           </h1>

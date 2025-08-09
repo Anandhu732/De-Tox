@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Target, Trophy, Info, Menu, X } from 'lucide-react';
 
@@ -22,11 +22,16 @@ const Navigation = () => {
             to="/"
             className="flex items-center space-x-2 transform hover:scale-110 transition-transform"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-red-500 rounded-lg animate-spin">
-              <Target className="w-6 h-6 text-white m-1" />
-            </div>
+            <img
+              src="/smily.png"
+              alt="De-Tox Logo"
+              className="w-8 h-8 animate-pulse hover:animate-spin transition-all duration-300"
+              style={{
+                filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.5))'
+              }}
+            />
             <span className="text-white font-black text-lg sm:text-xl transform rotate-1 hidden sm:block">
-              Focus? Never!
+              De-Tox
             </span>
           </Link>
 
