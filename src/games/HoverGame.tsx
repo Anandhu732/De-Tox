@@ -18,6 +18,8 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
   const [hoverEffects, setHoverEffects] = useState<{id: string, intensity: number}[]>([]);
   const [streak, setStreak] = useState(0);
   const [encouragementMode, setEncouragementMode] = useState(false);
+  const [mockingPopups, setMockingPopups] = useState<{id: string, message: string, x: number, y: number}[]>([]);
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
 
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const moveIntervalRef = useRef<ReturnType<typeof setInterval>>();
@@ -37,6 +39,25 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
     `The box is having second thoughts about ${playerName}! 🤨`,
     `${playerName}, channel your inner zen master! 🧘‍♂️`,
     `Focus ${playerName}! The box believes in you... sort of 😅`
+  ], [playerName]);
+
+  // Mocking popup messages to irritate the player
+  const mockingMessages = useMemo(() => [
+    `😂 Almost got it ${playerName}!`,
+    `🤪 Too slow! Try again!`,
+    `😈 The box is laughing at you!`,
+    `🙄 Are you even trying?`,
+    `😏 Close but no cigar!`,
+    `🤔 Maybe use a trackball?`,
+    `😅 That's embarrassing...`,
+    `🎯 Aim better ${playerName}!`,
+    `😆 My grandma moves faster!`,
+    `🤨 Suspicious lack of skill...`,
+    `😎 The box is too cool for you!`,
+    `🤗 Aww, you're trying so hard!`,
+    `🙃 Upside down might work better!`,
+    `😵‍💫 Dizzy from all that missing?`,
+    `🎪 What a circus performance!`
   ], [playerName]);
 
   // Audio feedback for engagement
@@ -85,10 +106,44 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
   const moveTarget = useCallback(() => {
     if (!gameActive) return;
 
+    // Check if mouse is close to target - if so, make it run away!
+    const distanceToMouse = Math.sqrt(
+      Math.pow(mousePosition.x - targetPosition.x, 2) +
+      Math.pow(mousePosition.y - targetPosition.y, 2)
+    );
+
     const moveType = Math.random();
     let newPosition = { x: 50, y: 50 };
 
-    if (moveType < 0.15) { // Reduced teleport frequency for better gameplay
+    if (distanceToMouse < 20) { // Player is getting close - RUN AWAY!
+      const angle = Math.atan2(
+        targetPosition.y - mousePosition.y,
+        targetPosition.x - mousePosition.x
+      );
+      const distance = 25 + Math.random() * 15;
+      newPosition = {
+        x: Math.min(85, Math.max(15, targetPosition.x + Math.cos(angle) * distance)),
+        y: Math.min(85, Math.max(15, targetPosition.y + Math.sin(angle) * distance))
+      };
+      setShakeIntensity(5);
+      setBgHue(prev => (prev + 90) % 360);
+      playSound(900, 'square', 0.25);
+      onSarcasticMessage(`🏃‍♂️ Nope! The box is escaping from ${playerName}!`);
+
+      // Create mocking popup
+      const mockingId = Math.random().toString(36).substr(2, 9);
+      const mockingMessage = mockingMessages[Math.floor(Math.random() * mockingMessages.length)];
+      setMockingPopups(prev => [...prev.slice(-2), {
+        id: mockingId,
+        message: mockingMessage,
+        x: Math.random() * 60 + 20,
+        y: Math.random() * 60 + 20
+      }]);
+      setTimeout(() => {
+        setMockingPopups(prev => prev.filter(p => p.id !== mockingId));
+      }, 2000);
+
+    } else if (moveType < 0.15) { // Reduced teleport frequency for better gameplay
       newPosition = getRandomPosition();
       setShakeIntensity(4);
       setBgHue(prev => (prev + 45) % 360);
@@ -129,7 +184,7 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
     }
 
     setTimeout(() => setShakeIntensity(0), 250);
-  }, [getRandomPosition, gameActive, targetPosition.x, targetPosition.y, playerName, onSarcasticMessage, playSound, timeHovered, encouragementMode]);
+  }, [getRandomPosition, gameActive, targetPosition.x, targetPosition.y, playerName, onSarcasticMessage, playSound, timeHovered, encouragementMode, mousePosition.x, mousePosition.y, mockingMessages, setMockingPopups]);
 
   // Enhanced timer effect with better feedback
   useEffect(() => {
@@ -205,15 +260,15 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
   // Target movement effect - adaptive difficulty
   useEffect(() => {
     if (gameActive) {
-      // Slower movement when player is doing well (encouragement mode)
-      const baseInterval = encouragementMode ? 4000 : 2500;
-      const randomVariation = Math.random() * 1500;
+      // Much faster movement when player is doing well - make it harder!
+      const baseInterval = encouragementMode ? 800 : 1200; // Faster than before
+      const randomVariation = Math.random() * 500;
 
       moveIntervalRef.current = setInterval(() => {
         moveTarget();
 
-        // Less frequent sarcastic messages when in encouragement mode
-        const messageChance = encouragementMode ? 0.05 : 0.1;
+        // More frequent sarcastic messages
+        const messageChance = encouragementMode ? 0.2 : 0.3;
         if (Math.random() < messageChance) {
           const message = sarcasticMessages[Math.floor(Math.random() * sarcasticMessages.length)];
           onSarcasticMessage(message);
@@ -227,6 +282,27 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
       }
     };
   }, [moveTarget, gameActive, onSarcasticMessage, sarcasticMessages, encouragementMode]);
+
+  // Constant mocking popup generation to irritate player
+  useEffect(() => {
+    if (gameActive) {
+      const popupInterval = setInterval(() => {
+        const mockingId = Math.random().toString(36).substr(2, 9);
+        const mockingMessage = mockingMessages[Math.floor(Math.random() * mockingMessages.length)];
+        setMockingPopups(prev => [...prev.slice(-3), {
+          id: mockingId,
+          message: mockingMessage,
+          x: Math.random() * 70 + 15,
+          y: Math.random() * 70 + 15
+        }]);
+        setTimeout(() => {
+          setMockingPopups(prev => prev.filter(p => p.id !== mockingId));
+        }, 1500 + Math.random() * 1000);
+      }, 800 + Math.random() * 1200); // Popup every 0.8-2 seconds
+
+      return () => clearInterval(popupInterval);
+    }
+  }, [gameActive, mockingMessages]);
 
   // Background hue animation
   useEffect(() => {
@@ -282,6 +358,14 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
       <div
         ref={gameAreaRef}
         className="relative w-full max-w-lg aspect-square border-4 border-white rounded-2xl overflow-hidden shadow-2xl cursor-crosshair"
+        onMouseMove={(e) => {
+          if (gameAreaRef.current) {
+            const rect = gameAreaRef.current.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            setMousePosition({ x, y });
+          }
+        }}
         style={{
           background: `
             radial-gradient(circle at 25% 25%, hsla(${bgHue}, 60%, 50%, 0.3) 0%, transparent 50%),
@@ -314,6 +398,23 @@ const HoverGame: React.FC<HoverGameProps> = ({ playerName, onGameEnd, onSarcasti
               borderRadius: '50%'
             }}
           />
+        ))}
+
+        {/* Mocking Popups to irritate the player */}
+        {mockingPopups.map(popup => (
+          <div
+            key={popup.id}
+            className="absolute z-40 pointer-events-none animate-bounce"
+            style={{
+              left: `${popup.x}%`,
+              top: `${popup.y}%`,
+              transform: 'translate(-50%, -50%)'
+            }}
+          >
+            <div className="bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg border-2 border-yellow-400 font-bold text-sm whitespace-nowrap">
+              {popup.message}
+            </div>
+          </div>
         ))}
 
         {/* Progress visualization */}

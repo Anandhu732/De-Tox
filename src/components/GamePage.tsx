@@ -4,6 +4,7 @@ import { Link, useParams, useLocation } from 'react-router-dom';
 import HoverGame from '../games/HoverGame';
 import ClickGame from '../games/ClickGame';
 import AvoidGame from '../games/AvoidGame';
+import { addScore } from '../utils/scoreManager';
 
 interface PopupMessage {
   id: string;
@@ -119,6 +120,11 @@ const GamePage = () => {
   const handleGameEnd = (result: 'won' | 'lost', score: number) => {
     setGameState(result);
     setFinalScore(score);
+
+    // Save score to leaderboard if player won or has a decent score
+    if (result === 'won' || score > 0) {
+      addScore(playerName, gameId || 'unknown', score);
+    }
 
     if (result === 'won') {
       setSarcasticMessage(`🤯 IMPOSSIBLE! ${playerName} actually won! This must be a glitch in the matrix!`);

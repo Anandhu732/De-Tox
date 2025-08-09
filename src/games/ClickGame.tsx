@@ -18,6 +18,8 @@ const ClickGame: React.FC<ClickGameProps> = ({ playerName, onGameEnd, onSarcasti
   const [combo, setCombo] = useState(0);
   const [targetSize, setTargetSize] = useState(1);
   const [speedBoost, setSpeedBoost] = useState(false);
+  const [mockingPopups, setMockingPopups] = useState<{id: string, message: string, x: number, y: number}[]>([]);
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
   const targetClicks = 10;
 
   const gameAreaRef = useRef<HTMLDivElement>(null);
@@ -38,6 +40,25 @@ const ClickGame: React.FC<ClickGameProps> = ({ playerName, onGameEnd, onSarcasti
     `The box is laughing at your technique! 📦😂`,
     `${playerName}, channel your inner speed demon! 🔥`,
     `That's it ${playerName}! Give me that chaotic energy! ⚡`
+  ], [playerName]);
+
+  // Mocking popup messages to irritate the player
+  const mockingMessages = useMemo(() => [
+    `😂 Missed again ${playerName}!`,
+    `🤪 Too slow! Box escaped!`,
+    `😈 Can't catch me!`,
+    `🙄 My turn to move!`,
+    `😏 Better aim next time!`,
+    `🤔 Are you even trying?`,
+    `😅 Embarrassing...`,
+    `🎯 Precision? What's that?`,
+    `😆 Box: 1, ${playerName}: 0`,
+    `🤨 Suspicious clicking...`,
+    `😎 Too cool for your clicks!`,
+    `🤗 Aww, so close!`,
+    `🙃 Wrong spot buddy!`,
+    `😵‍💫 Dizzy from dodging?`,
+    `🎪 What a show!`
   ], [playerName]);
 
   // Audio feedback for ADHD engagement
@@ -86,10 +107,44 @@ const ClickGame: React.FC<ClickGameProps> = ({ playerName, onGameEnd, onSarcasti
   const moveTarget = useCallback(() => {
     if (!gameActive) return;
 
+    // Check if mouse is close to target - if so, make it run away!
+    const distanceToMouse = Math.sqrt(
+      Math.pow(mousePosition.x - targetPosition.x, 2) +
+      Math.pow(mousePosition.y - targetPosition.y, 2)
+    );
+
     const moveType = Math.random();
     let newPosition = { x: 50, y: 50 };
 
-    if (moveType < 0.25) { // Teleport - reduced frequency
+    if (distanceToMouse < 15) { // Player is getting close - RUN AWAY FAST!
+      const angle = Math.atan2(
+        targetPosition.y - mousePosition.y,
+        targetPosition.x - mousePosition.x
+      );
+      const distance = 30 + Math.random() * 20;
+      newPosition = {
+        x: Math.min(85, Math.max(15, targetPosition.x + Math.cos(angle) * distance)),
+        y: Math.min(85, Math.max(15, targetPosition.y + Math.sin(angle) * distance))
+      };
+      setShakeIntensity(6);
+      setBgHue(prev => (prev + 120) % 360);
+      playSound(1000, 'square', 0.3);
+      onSarcasticMessage(`🏃‍♂️💨 Nice try ${playerName}! Can't catch me!`);
+
+      // Create mocking popup
+      const mockingId = Math.random().toString(36).substr(2, 9);
+      const mockingMessage = mockingMessages[Math.floor(Math.random() * mockingMessages.length)];
+      setMockingPopups(prev => [...prev.slice(-2), {
+        id: mockingId,
+        message: mockingMessage,
+        x: Math.random() * 60 + 20,
+        y: Math.random() * 60 + 20
+      }]);
+      setTimeout(() => {
+        setMockingPopups(prev => prev.filter(p => p.id !== mockingId));
+      }, 1800);
+
+    } else if (moveType < 0.25) { // Teleport - reduced frequency
       newPosition = getRandomPosition();
       setShakeIntensity(4);
       setBgHue(prev => (prev + 60) % 360);
@@ -124,7 +179,7 @@ const ClickGame: React.FC<ClickGameProps> = ({ playerName, onGameEnd, onSarcasti
     setTargetSize(0.8 + Math.random() * 0.4);
 
     setTimeout(() => setShakeIntensity(0), 300);
-  }, [getRandomPosition, gameActive, targetPosition.x, targetPosition.y, playSound]);
+  }, [getRandomPosition, gameActive, targetPosition.x, targetPosition.y, playSound, mousePosition.x, mousePosition.y, mockingMessages, setMockingPopups, onSarcasticMessage, playerName]);
 
   const handleTargetClick = useCallback(() => {
     if (!gameActive) return;
@@ -233,17 +288,17 @@ const ClickGame: React.FC<ClickGameProps> = ({ playerName, onGameEnd, onSarcasti
     return () => clearInterval(interval);
   }, [gameActive, timeLeft, clickCount, targetClicks, playerName, onGameEnd, onSarcasticMessage, playSound, combo]);
 
-  // Target movement effect - dynamic intervals for ADHD engagement
+  // Target movement effect - much faster and more aggressive
   useEffect(() => {
     if (gameActive) {
-      const baseInterval = speedBoost ? 800 : 1500;
-      const randomVariation = Math.random() * 1000;
+      const baseInterval = speedBoost ? 400 : 800; // Much faster movement!
+      const randomVariation = Math.random() * 300;
 
       moveIntervalRef.current = setInterval(() => {
         moveTarget();
 
-        // Random sarcastic messages with better timing
-        if (Math.random() < 0.15) {
+        // More frequent sarcastic messages
+        if (Math.random() < 0.3) {
           const message = sarcasticMessages[Math.floor(Math.random() * sarcasticMessages.length)];
           onSarcasticMessage(message);
         }
@@ -256,6 +311,27 @@ const ClickGame: React.FC<ClickGameProps> = ({ playerName, onGameEnd, onSarcasti
       }
     };
   }, [moveTarget, gameActive, onSarcasticMessage, sarcasticMessages, speedBoost]);
+
+  // Constant mocking popup generation to irritate player
+  useEffect(() => {
+    if (gameActive) {
+      const popupInterval = setInterval(() => {
+        const mockingId = Math.random().toString(36).substr(2, 9);
+        const mockingMessage = mockingMessages[Math.floor(Math.random() * mockingMessages.length)];
+        setMockingPopups(prev => [...prev.slice(-3), {
+          id: mockingId,
+          message: mockingMessage,
+          x: Math.random() * 70 + 15,
+          y: Math.random() * 70 + 15
+        }]);
+        setTimeout(() => {
+          setMockingPopups(prev => prev.filter(p => p.id !== mockingId));
+        }, 1200 + Math.random() * 800);
+      }, 600 + Math.random() * 800); // Popup every 0.6-1.4 seconds
+
+      return () => clearInterval(popupInterval);
+    }
+  }, [gameActive, mockingMessages]);
 
   return (
     <div className="flex flex-col items-center space-y-6 relative">
@@ -304,6 +380,14 @@ const ClickGame: React.FC<ClickGameProps> = ({ playerName, onGameEnd, onSarcasti
       <div
         ref={gameAreaRef}
         className="relative w-full max-w-lg aspect-square border-4 border-white rounded-2xl overflow-hidden shadow-2xl"
+        onMouseMove={(e) => {
+          if (gameAreaRef.current) {
+            const rect = gameAreaRef.current.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            setMousePosition({ x, y });
+          }
+        }}
         style={{
           background: `
             radial-gradient(circle at 30% 30%, hsla(${bgHue}, 70%, 60%, 0.3) 0%, transparent 50%),
@@ -340,6 +424,23 @@ const ClickGame: React.FC<ClickGameProps> = ({ playerName, onGameEnd, onSarcasti
               className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white font-bold text-lg animate-bounce"
             >
               +1
+            </div>
+          </div>
+        ))}
+
+        {/* Mocking Popups to irritate the player */}
+        {mockingPopups.map(popup => (
+          <div
+            key={popup.id}
+            className="absolute z-40 pointer-events-none animate-pulse"
+            style={{
+              left: `${popup.x}%`,
+              top: `${popup.y}%`,
+              transform: 'translate(-50%, -50%)'
+            }}
+          >
+            <div className="bg-orange-600 text-white px-3 py-2 rounded-lg shadow-lg border-2 border-yellow-400 font-bold text-sm whitespace-nowrap">
+              {popup.message}
             </div>
           </div>
         ))}

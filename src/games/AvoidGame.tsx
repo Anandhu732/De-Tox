@@ -28,32 +28,26 @@ interface FloatingTaunt {
 }
 
 const TAUNTS = [
-  "Nice try — keep dreaming! 😂",
-  "Manki, are you trying to get hit? 🤨",
-  "Is your mouse asleep? 🐌",
-  "Bold move. We'll remember that. 🤡",
-  "That was almost skill. Almost.",
-  "You're like a magnet for trouble.",
-  "Move! Move! Wait... now you're still.",
-  "The obstacles have formed a union.",
-  "Pro tip: not getting hit helps.",
-  "I would clap, but I'm too busy judging you.",
-  "Your reflexes are slower than a sloth on vacation 🦥",
-  "Did you leave your skills at home today? 🏠",
-  "I've seen better movement in a statue garden 🗿",
-  "Are you even trying? 🙄",
-  "This is painful to watch... literally 😬",
-  "My grandma plays better than you 👵",
-  "You call that dodging? I've seen snails with better moves 🐌",
-  "Is this your first time playing a game? 🤔",
-  "You're about as graceful as a bull in a china shop 🐂",
-  "I'm falling asleep waiting for you to move 😴",
-  "Congratulations on being terrible at this! 👏",
-  "Your high score will be... well, not high 📉",
-  "I've seen rocks with better strategy 🪨",
-  "Are you playing with your feet? 👣",
-  "This performance is why we can't have nice things ❌",
-  "You're dodging like my grandpa dodges questions 👴"
+  "Nice try! 😂",
+  "Too slow! 🐌",
+  "Almost hit me! 🤡",
+  "That was close! 😅",
+  "Move faster! 🏃‍♂️",
+  "Catch me if you can! 👻",
+  "You're getting warmer! 🔥",
+  "Oops, missed again! �",
+  "I'm over here! �",
+  "Getting tired? �",
+  "Try harder! �",
+  "So close, yet so far! �",
+  "Is that your best? 🤔",
+  "Getting dizzy? �",
+  "I'm right behind you! 👀",
+  "Dance with me! �",
+  "Can't touch this! ✋",
+  "You're improving... not! 📉",
+  "Giving up already? 🏳️",
+  "I'm everywhere! �"
 ];
 
 const randomFrom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
@@ -176,14 +170,31 @@ const AvoidGame: React.FC<AvoidGameProps> = ({ playerName, onGameEnd, onSarcasti
   }, []);
 
   const addFloatingTaunt = useCallback((text: string) => {
+    // Avoid spawning too many taunts in same area
+    const safeZones = [
+      { left: rand(10, 25), top: rand(10, 25) },   // Top-left
+      { left: rand(75, 90), top: rand(10, 25) },   // Top-right
+      { left: rand(10, 25), top: rand(75, 90) },   // Bottom-left
+      { left: rand(75, 90), top: rand(75, 90) },   // Bottom-right
+      { left: rand(40, 60), top: rand(5, 15) },    // Top-center
+      { left: rand(40, 60), top: rand(85, 95) }    // Bottom-center
+    ];
+
+    const position = safeZones[Math.floor(Math.random() * safeZones.length)];
+
     const newTaunt: FloatingTaunt = {
       id: Math.random().toString(36).slice(2, 9),
       text,
-      left: rand(15, 75),
-      top: rand(15, 75),
-      lifetime: 4000 + Math.random() * 2000
+      left: position.left,
+      top: position.top,
+      lifetime: 3000 + Math.random() * 1000 // Reduced lifetime for better performance
     };
-    setFloatingTaunts(prev => [...prev.slice(-4), newTaunt]); // Keep max 5 taunts
+
+    setFloatingTaunts(prev => {
+      // Keep max 3 taunts for better performance
+      const filtered = prev.slice(-2);
+      return [...filtered, newTaunt];
+    });
   }, []);
 
   // Game loop
@@ -259,7 +270,7 @@ const AvoidGame: React.FC<AvoidGameProps> = ({ playerName, onGameEnd, onSarcasti
           playBeep(540 + Math.random()*200, 'square', 0.05);
 
           const now = performance.now();
-          if (now - lastTauntRef.current > 2000) {
+          if (now - lastTauntRef.current > 3000) { // Increased from 2000 to reduce spam
             const taunt = randomFrom(TAUNTS);
             onSarcasticMessage(taunt);
             addFloatingTaunt(taunt);
@@ -326,7 +337,7 @@ const AvoidGame: React.FC<AvoidGameProps> = ({ playerName, onGameEnd, onSarcasti
           setTimeout(() => setConfetti([]), 1100);
         }
 
-        if (Math.random() < 0.25) {
+        if (Math.random() < 0.15) { // Reduced from 0.25 to reduce taunt spam
           const taunt = randomFrom(TAUNTS);
           onSarcasticMessage(taunt);
           addFloatingTaunt(taunt);
@@ -339,16 +350,16 @@ const AvoidGame: React.FC<AvoidGameProps> = ({ playerName, onGameEnd, onSarcasti
     return () => clearInterval(interval);
   }, [gameActive, onSarcasticMessage, addFloatingTaunt, playBeep]);
 
-  // Floating taunt lifetime management
+  // Optimized floating taunt lifetime management
   useEffect(() => {
     if (floatingTaunts.length === 0) return;
 
     const interval = setInterval(() => {
       setFloatingTaunts(prev => {
-        const updated = prev.map(t => ({ ...t, lifetime: t.lifetime - 100 }));
+        const updated = prev.map(t => ({ ...t, lifetime: t.lifetime - 150 })); // Faster cleanup
         return updated.filter(t => t.lifetime > 0);
       });
-    }, 100);
+    }, 150); // Less frequent updates for better performance
 
     return () => clearInterval(interval);
   }, [floatingTaunts.length]);
@@ -422,52 +433,70 @@ const AvoidGame: React.FC<AvoidGameProps> = ({ playerName, onGameEnd, onSarcasti
   // Render functions
   const renderSpeech = (o: Obstacle) => {
     if (!o.taunt) return null;
+
+    // Dynamic bubble size based on text length
+    const isLongText = o.taunt.length > 15;
+    const bubbleClass = isLongText ? 'text-xs px-3 py-2' : 'text-sm px-2 py-1';
+
     return (
       <div
-        className="absolute text-xs bg-black bg-opacity-70 text-white px-2 py-1 rounded-lg whitespace-nowrap transform -translate-x-1/2 -translate-y-full"
-        style={{ left: `${o.x}%`, top: `${o.y - (o.size/2) - 0.8}%`, zIndex: 60 }}
+        className={`absolute ${bubbleClass} bg-gradient-to-br from-gray-900 to-black border-2 border-purple-400 text-white rounded-xl whitespace-nowrap transform -translate-x-1/2 -translate-y-full shadow-2xl backdrop-blur-sm z-70`}
+        style={{
+          left: `${o.x}%`,
+          top: `${o.y - (o.size/2) - 1.5}%`,
+          maxWidth: '200px',
+          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))'
+        }}
       >
-        {o.taunt}
+        <div className="font-medium text-center">{o.taunt}</div>
+
+        {/* Speech bubble tail */}
+        <div
+          className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-6 border-transparent border-t-gray-900"
+          style={{
+            borderTopColor: '#111827',
+            filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.3))'
+          }}
+        />
+
+        {/* Glow effect */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-xl opacity-30 blur-sm -z-10" />
       </div>
     );
   };
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
-      {/* Floating taunts - Enhanced UI */}
+      {/* Floating taunts - Optimized */}
       {floatingTaunts.map(taunt => {
-        const progress = 1 - (taunt.lifetime / 6000);
-        const scale = 1 + Math.sin(progress * Math.PI * 3) * 0.1;
-        const opacity = taunt.lifetime < 1000 ? taunt.lifetime / 1000 : Math.max(0.3, 1 - progress);
+        const progress = 1 - (taunt.lifetime / 4000); // Reduced from 6000 for faster animation
+        const scale = 0.9 + Math.sin(progress * Math.PI * 2) * 0.1; // Smoother scaling
+        const opacity = taunt.lifetime < 800 ? taunt.lifetime / 800 : Math.max(0.2, 1 - progress * 1.2);
+        const yOffset = Math.sin(progress * Math.PI * 4) * 2; // Floating effect
 
         return (
           <div
             key={taunt.id}
-            className="absolute pointer-events-none z-50 animate-pulse"
+            className="absolute pointer-events-none z-50"
             style={{
               left: `${taunt.left}%`,
-              top: `${taunt.top}%`,
-              transform: `translate(-50%, -50%) scale(${scale}) rotate(${progress * 360}deg)`,
+              top: `${taunt.top + yOffset}%`,
+              transform: `translate(-50%, -50%) scale(${scale})`,
               opacity,
+              transition: 'opacity 0.3s ease-out'
             }}
           >
-            <div className="relative">
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400 rounded-lg blur-md opacity-60"></div>
+            {/* Simplified glow effect */}
+            <div className="absolute -inset-2 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-400 rounded-xl blur-sm opacity-40"></div>
 
-              {/* Main taunt bubble */}
-              <div className="relative bg-gradient-to-br from-gray-900 to-black border-2 border-purple-400 px-4 py-2 rounded-lg shadow-2xl backdrop-blur-sm">
-                <div className="text-white font-bold text-sm whitespace-nowrap text-center drop-shadow-lg">
-                  {taunt.text}
-                </div>
-
-                {/* Sparkle effects */}
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
-                <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-pink-400 rounded-full animate-bounce"></div>
+            {/* Streamlined taunt bubble */}
+            <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-cyan-400 px-3 py-2 rounded-xl shadow-xl">
+              <div className="text-white font-semibold text-sm text-center whitespace-nowrap">
+                {taunt.text}
               </div>
 
-              {/* Speech bubble tail */}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-8 border-transparent border-t-gray-900"></div>
+              {/* Single accent sparkle */}
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-300 rounded-full animate-ping"></div>
             </div>
           </div>
         );
@@ -594,46 +623,75 @@ const AvoidGame: React.FC<AvoidGameProps> = ({ playerName, onGameEnd, onSarcasti
             <React.Fragment key={o.id}>
               {o.taunt && renderSpeech(o)}
               <div
-                className={`absolute rounded-full shadow-2xl flex items-center justify-center z-30 transition-all duration-200 ${
+                className={`absolute rounded-full shadow-2xl flex items-center justify-center z-30 transition-all duration-300 ${
                   o.golden ? 'ring-4 ring-yellow-300 animate-pulse' : ''
-                } ${o.fake ? 'opacity-60 animate-bounce' : ''}`}
+                } ${o.fake ? 'opacity-50 animate-bounce scale-90' : 'scale-100'}`}
                 style={{
                   left: `${o.x}%`,
                   top: `${o.y}%`,
                   width: `${o.size}%`,
                   height: `${o.size}%`,
-                  transform: 'translate(-50%, -50%)'
+                  transform: `translate(-50%, -50%) ${o.fake ? 'scale(0.9)' : 'scale(1.0)'}`,
+                  filter: o.fake ? 'blur(0.5px) brightness(0.8)' : 'none'
                 }}
               >
-                {/* Obstacle glow effect */}
+                {/* Enhanced obstacle glow effect */}
                 <div
-                  className={`absolute inset-0 rounded-full blur-md opacity-50 ${
-                    o.golden ? 'bg-gradient-to-br from-yellow-300 to-orange-400' : 'bg-gradient-to-br from-red-500 to-orange-600'
+                  className={`absolute inset-0 rounded-full blur-lg opacity-60 ${
+                    o.golden ? 'bg-gradient-to-br from-yellow-200 to-orange-500' :
+                    o.fake ? 'bg-gradient-to-br from-gray-400 to-gray-600' :
+                    'bg-gradient-to-br from-red-400 to-orange-700'
                   }`}
                 ></div>
 
-                {/* Main obstacle body */}
+                {/* Outer ring for better visibility */}
                 <div
-                  className={`relative w-full h-full rounded-full flex items-center justify-center border-2 ${
-                    o.golden ? 'bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500 border-yellow-600' :
-                    'bg-gradient-to-br from-red-500 via-red-600 to-orange-700 border-red-800'
+                  className={`absolute inset-0 rounded-full border-4 ${
+                    o.golden ? 'border-yellow-200' :
+                    o.fake ? 'border-gray-400' :
+                    'border-red-300'
+                  } opacity-70`}
+                ></div>
+
+                {/* Main obstacle body with improved contrast */}
+                <div
+                  className={`relative w-full h-full rounded-full flex items-center justify-center border-3 ${
+                    o.golden ? 'bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-400 border-yellow-700' :
+                    o.fake ? 'bg-gradient-to-br from-gray-500 via-gray-600 to-gray-700 border-gray-800' :
+                    'bg-gradient-to-br from-red-600 via-red-700 to-orange-800 border-red-900'
                   }`}
                   style={{
                     boxShadow: o.golden ?
-                      '0 0 20px rgba(255, 215, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.3)' :
-                      '0 0 15px rgba(239, 68, 68, 0.6), inset 0 2px 4px rgba(0, 0, 0, 0.3)'
+                      '0 0 25px rgba(255, 215, 0, 0.8), inset 0 3px 6px rgba(255, 255, 255, 0.4), 0 4px 12px rgba(0,0,0,0.3)' :
+                      o.fake ?
+                      '0 0 10px rgba(107, 114, 128, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0,0,0,0.2)' :
+                      '0 0 20px rgba(239, 68, 68, 0.8), inset 0 3px 6px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0,0,0,0.4)'
                   }}
                 >
-                  <Skull className={`w-full h-full p-1 ${o.golden ? 'text-white drop-shadow-md' : 'text-white drop-shadow-lg'}`} />
+                  {/* Enhanced icon with better contrast */}
+                  <Skull className={`w-full h-full p-1 ${
+                    o.golden ? 'text-yellow-900 drop-shadow-lg' :
+                    o.fake ? 'text-gray-300 drop-shadow-sm' :
+                    'text-white drop-shadow-xl'
+                  }`} strokeWidth={o.golden ? 2.5 : 2} />
 
-                  {/* Rotating danger indicator */}
+                  {/* Enhanced rotating danger indicator */}
                   {!o.golden && !o.fake && (
-                    <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-red-300 animate-spin opacity-60"></div>
+                    <div className="absolute inset-0 rounded-full border-3 border-transparent border-t-red-200 border-r-red-200 animate-spin opacity-80"></div>
                   )}
 
-                  {/* Golden sparkle effect */}
+                  {/* Enhanced golden sparkle effects */}
                   {o.golden && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-300 rounded-full animate-ping"></div>
+                    <>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-200 rounded-full animate-ping"></div>
+                      <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-orange-300 rounded-full animate-pulse"></div>
+                      <div className="absolute top-0 left-0 w-2 h-2 bg-white rounded-full animate-bounce"></div>
+                    </>
+                  )}
+
+                  {/* Fake obstacle indicator */}
+                  {o.fake && (
+                    <div className="absolute inset-0 rounded-full bg-gray-300 opacity-20 animate-pulse"></div>
                   )}
                 </div>
               </div>
