@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, MousePointer, Shield, Clock, User, Play, Sparkles } from 'lucide-react';
+import { Target, MousePointer, Shield, User, Play, Sparkles } from 'lucide-react';
+
+const emojis = ['🎮', '🎯', '🤪', '😵‍💫', '🎉', '💫', '⭐', '🌟', '🎈', '🦄', '🌈'];
 
 const GameSelection = () => {
   const [playerName, setPlayerName] = useState('');
@@ -47,8 +49,6 @@ const GameSelection = () => {
       emojis: ['🛡️', '💀', '🏃‍♂️']
     }
   ];
-
-  const emojis = ['🎮', '🎯', '🤪', '😵‍💫', '🎉', '💫', '⭐', '🌟', '🎈', '🦄', '🌈'];
 
   useEffect(() => {
     const interval = setInterval(() => {

@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Target, Zap, AlertTriangle, Gift, Sparkles, Home, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Target, Zap, AlertTriangle, Gift, Sparkles, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const rotatingMessages = [
+  "How does this madness work? 🤔",
+  "The science behind the chaos! 🧪",
+  "Understanding the impossible! 🤯",
+  "Decoding the digital insanity! 💻"
+];
 
 const AboutPage = () => {
   const [backgroundMode, setBackgroundMode] = useState(0);
@@ -11,13 +18,6 @@ const AboutPage = () => {
     'bg-gradient-to-tr from-green-900 via-teal-900 to-blue-900',
     'bg-gradient-to-bl from-red-900 via-pink-900 to-purple-900',
     'bg-gradient-to-tl from-yellow-900 via-orange-900 to-red-900'
-  ];
-
-  const rotatingMessages = [
-    "How does this madness work? 🤔",
-    "The science behind the chaos! 🧪",
-    "Understanding the impossible! 🤯",
-    "Decoding the digital insanity! 💻"
   ];
 
   useEffect(() => {
@@ -92,7 +92,7 @@ const AboutPage = () => {
             {rotatingMessages[rotatingText]}
           </h1>
           <p className="text-lg sm:text-xl lg:text-2xl text-yellow-300 font-bold transform -rotate-1 max-w-4xl mx-auto">
-            Welcome to the technical documentation for the world's most frustrating game! 
+            Welcome to the technical documentation for the world's most frustrating game!
             <br className="hidden sm:block" />
             Prepare to have your mind blown (and your patience tested)! 🤯
           </p>
@@ -237,16 +237,6 @@ const AboutPage = () => {
             <Home className="inline w-5 h-5 sm:w-6 sm:h-6 mr-2" />
             Back to Safety
           </Link>
-
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg transform hover:scale-110 hover:rotate-2 transition-all text-lg sm:text-xl border-4 border-green-400 text-center"
-          >
-            <ExternalLink className="inline w-5 h-5 sm:w-6 sm:h-6 mr-2" />
-            Source Code
-          </a>
         </div>
       </div>
     </div>

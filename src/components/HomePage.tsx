@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Target, Zap, Sparkles, ArrowRight } from 'lucide-react';
+
+const emojis = ['🎯', '🤪', '😵‍💫', '🎉', '💫', '⭐', '🌟', '🎈', '🦄', '🌈'];
 
 const HomePage = () => {
   const [backgroundMode, setBackgroundMode] = useState(0);
@@ -12,8 +14,6 @@ const HomePage = () => {
     'bg-gradient-to-bl from-indigo-600 via-pink-500 to-yellow-400',
     'bg-gradient-to-tl from-red-500 via-orange-500 to-yellow-500'
   ];
-
-  const emojis = ['🎯', '🤪', '😵‍💫', '🎉', '💫', '⭐', '🌟', '🎈', '🦄', '🌈'];
 
   useEffect(() => {
     const interval = setInterval(() => {

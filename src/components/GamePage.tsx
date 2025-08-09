@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, Sparkles, Home, RefreshCw, Trophy, Target, MousePointer, Shield } from 'lucide-react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import HoverGame from '../games/HoverGame';
