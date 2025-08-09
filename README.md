@@ -108,19 +108,18 @@ For Software:
 
 # Screenshots (Add at least 3)
 
-![Homepage](https://github.com/user-attachments/assets/homepage-screenshot)
+![Homepage] <img width="2829" height="1370" alt="Screenshot 2025-08-09 071934" src="https://github.com/user-attachments/assets/bcaa2c92-800b-46e2-bc3b-83d3489943d2" />
+
 _Main landing page with chaotic animations and rotating backgrounds - "Focus? Never Heard of It!" welcome screen_
 
-![Hover Game](https://github.com/user-attachments/assets/hover-game-screenshot)
+![Hover Game] <img width="2812" height="1346" alt="Screenshot 2025-08-09 072032" src="https://github.com/user-attachments/assets/d34ba774-9bd9-4f8d-929f-8b9f7902dd9c" />
+
 _Hover Hell gameplay showing the impossibly evasive target with proximity-based movement and mocking popups_
 
-![Leaderboard](https://github.com/user-attachments/assets/leaderboard-screenshot)
+![Leaderboard]<img width="2815" height="1350" alt="Screenshot 2025-08-09 072200" src="https://github.com/user-attachments/assets/c844d266-a243-425f-b9a5-96254cd4438b" />
+
 _Persistent leaderboard displaying player scores with sarcastic status messages and game filtering options_
 
-# Diagrams
-
-![Architecture](https://github.com/user-attachments/assets/architecture-diagram)
-_Component architecture showing React Router navigation, game state management, and localStorage persistence flow_
 
 ### Project Demo
 
@@ -131,7 +130,7 @@ _Live demonstration of all three impossible games: Hover Hell's evasive targets,
 
 # Additional Demos
 
-- **Live Demo**: [https://de-tox-demo.netlify.app](Deploy and add your live demo link)
+- **Live Demo**: https://de-tox-ten.vercel.app/
 - **GitHub Repository**: [https://github.com/Anandhu732/De-Tox](https://github.com/Anandhu732/De-Tox)
 - **Try the Challenge**: See if you can last more than 5 seconds in Hover Hell! (Hint: You probably can't)
 
